@@ -112,19 +112,154 @@
                 </div>
             </a>
 
-            <a href="{% url 'bookings:create_slot' %}" class="flex items-center p-4 border border-gray-200 rounded-lg hover:border-primary-300 hover:bg-primary-50 transition group">
+            <a href="{% url 'bookings:sessions_list' %}" class="flex items-center p-4 border border-gray-200 rounded-lg hover:border-primary-300 hover:bg-primary-50 transition group">
                 <div class="p-2 bg-purple-100 rounded-lg group-hover:bg-purple-200 transition">
                     <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                     </svg>
                 </div>
                 <div class="ml-4">
-                    <p class="font-medium text-gray-900">Share Link</p>
-                    <p class="text-sm text-gray-500">Get booking link</p>
+                    <p class="font-medium text-gray-900">Manage Sessions</p>
+                    <p class="text-sm text-gray-500">View all sessions</p>
                 </div>
             </a>
         </div>
     </div>
+
+    <!-- Recent Bookings -->
+    {% if recent_bookings %}
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-gray-900">Recent Bookings</h2>
+                <a href="{% url 'bookings:my_slots' %}" class="text-sm text-primary-600 hover:text-primary-700 font-medium">
+                    View all →
+                </a>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date & Time</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Booked By</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Session</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Booked At</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for slot in recent_bookings %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900">{{ slot.start_time|date:"M d, Y" }}</div>
+                                    <div class="text-sm text-gray-500">{{ slot.start_time|time:"H:i" }} - {{ slot.end_time|time:"H:i" }}</div>
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">
+                                        {% if slot.booked_by %}
+                                            {{ slot.booked_by.username }}
+                                        {% elif slot.guest_name %}
+                                            {{ slot.guest_name }} <span class="text-gray-400">(Guest)</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">
+                                        {% if slot.session %}
+                                            {{ slot.session.title }}
+                                        {% else %}
+                                            <span class="text-gray-400">—</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                                    {{ slot.booked_at|date:"M d, H:i" }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Active Sessions -->
+    {% if active_sessions %}
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold text-gray-900">Active Sessions</h2>
+                <a href="{% url 'bookings:sessions_list' %}" class="text-sm text-primary-600 hover:text-primary-700 font-medium">
+                    View all →
+                </a>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {% for session in active_sessions %}
+                    <div class="border border-gray-200 rounded-lg p-4 hover:border-primary-300 hover:shadow-md transition">
+                        <div class="flex items-start justify-between mb-2">
+                            <h3 class="text-sm font-semibold text-gray-900 flex-1">{{ session.title }}</h3>
+                            <button onclick="copyToClipboard('{{ request.scheme }}://{{ request.get_host }}{% url 'bookings:public_booking' session.public_link %}', this)" 
+                                    class="ml-2 text-gray-400 hover:text-primary-600 transition" 
+                                    title="Copy link">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="flex items-center justify-between mt-3">
+                            <span class="text-xs text-gray-500">{{ session.slots_count }} slot{{ session.slots_count|pluralize }}</span>
+                            <a href="{% url 'bookings:public_booking' session.public_link %}" 
+                               target="_blank"
+                               class="text-xs text-primary-600 hover:text-primary-700 font-medium">
+                                View →
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
 </div>
+
+<script>
+    function copyToClipboard(text, button) {
+        navigator.clipboard.writeText(text).then(function() {
+            if (button) {
+                const originalHTML = button.innerHTML;
+                button.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
+                button.classList.remove('text-gray-400');
+                button.classList.add('text-green-600');
+                
+                setTimeout(function() {
+                    button.innerHTML = originalHTML;
+                    button.classList.remove('text-green-600');
+                    button.classList.add('text-gray-400');
+                }, 2000);
+            }
+            
+            showToast('Link copied to clipboard!', 'success');
+        }).catch(function(err) {
+            console.error('Failed to copy: ', err);
+            showToast('Failed to copy link', 'error');
+        });
+    }
+
+    function showToast(message, type) {
+        const toast = document.createElement('div');
+        toast.className = `fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg transition-all transform translate-x-full ${
+            type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+        }`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.classList.remove('translate-x-full');
+        }, 100);
+        
+        setTimeout(() => {
+            toast.classList.add('translate-x-full');
+            setTimeout(() => {
+                document.body.removeChild(toast);
+            }, 300);
+        }, 3000);
+    }
+</script>
 {% endblock %}
 

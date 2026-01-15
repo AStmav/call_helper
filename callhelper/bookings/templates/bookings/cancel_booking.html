@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+{% load tz %}
+
+{% block title %}Cancel Booking - Calls Helper{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sm:p-8">
+        <!-- Warning Icon -->
+        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4">
+            <svg class="h-6 w-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+            </svg>
+        </div>
+
+        <!-- Page Header -->
+        <div class="text-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Cancel Booking</h1>
+            <p class="text-sm text-gray-600">Are you sure you want to cancel this booking?</p>
+        </div>
+
+        <!-- Booking Info -->
+        <div class="bg-gray-50 rounded-lg p-6 mb-6">
+            <div class="space-y-3">
+                <div>
+                    <span class="text-sm font-medium text-gray-700">Date:</span>
+                    <p class="text-lg font-semibold text-gray-900">{{ slot.start_time|date:"F d, Y" }}</p>
+                </div>
+                <div>
+                    <span class="text-sm font-medium text-gray-700">Time:</span>
+                    <p class="text-gray-900">{{ slot.start_time|time:"H:i" }} - {{ slot.end_time|time:"H:i" }}</p>
+                </div>
+                <div>
+                    <span class="text-sm font-medium text-gray-700">Duration:</span>
+                    <p class="text-gray-900">{{ slot.get_duration_display }}</p>
+                </div>
+                <div class="pt-3 border-t border-gray-200">
+                    <span class="text-sm font-medium text-gray-700">Booked by:</span>
+                    <p class="text-gray-900">
+                        {% if slot.booked_by %}
+                            {{ slot.booked_by.username }}
+                        {% elif slot.guest_name %}
+                            {{ slot.guest_name }} <span class="text-gray-500">(Guest)</span>
+                        {% endif %}
+                    </p>
+                    {% if slot.booked_at %}
+                        <p class="text-xs text-gray-500 mt-1">
+                            Booked on: {{ slot.booked_at|date:"M d, Y H:i" }}
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Warning Message -->
+        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+            <div class="flex">
+                <svg class="w-5 h-5 text-yellow-400 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                </svg>
+                <div>
+                    <h3 class="text-sm font-medium text-yellow-800">Warning</h3>
+                    <p class="mt-1 text-sm text-yellow-700">
+                        Canceling this booking will free up the slot for others to book. The person who booked will lose their reservation.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form -->
+        <form method="post" action="{% url 'bookings:cancel_booking' slot.id %}" class="space-y-4">
+            {% csrf_token %}
+
+            <!-- Actions -->
+            <div class="flex items-center justify-end space-x-4 pt-4 border-t border-gray-200">
+                <a href="{% url 'bookings:my_slots' %}" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                    Cancel
+                </a>
+                <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-yellow-600 rounded-lg hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition">
+                    Cancel Booking
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

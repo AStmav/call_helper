@@ -121,6 +121,20 @@ class TimeSlot(BaseModel):
             raise ValidationError(
                 "Booked slot must have 'booked_by' or 'guest_name' specified."
             )
+        
+        if self.start_time and self.end_time:
+            overlapping_slots = TimeSlot.objects.filter(
+                owner=self.owner,
+                start_time__lt=self.end_time,
+                end_time__gt=self.start_time
+            )
+            if self.pk:
+                overlapping_slots = overlapping_slots.exclude(pk=self.pk)
+            
+            if overlapping_slots.exists():
+                raise ValidationError(
+                    "This time slot overlaps with an existing slot. Please choose a different time."
+                )
     
     def save(self, *args, **kwargs):
         # Синхронизация is_booked и booked_by

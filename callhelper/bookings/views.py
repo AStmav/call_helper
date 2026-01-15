@@ -1,8 +1,10 @@
 from django.utils import timezone
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
+from django.db.models import Q, Count
 from .models import TimeSlot, BookingSession
 from .forms import UserRegistrationForm
 
@@ -50,11 +52,15 @@ def create_slot(request):
             end_time=end_time)
 
         try:
+            slot.full_clean()  
             slot.save()
             messages.success(request, 'Slot successfully created!')
             return redirect('bookings:my_slots')
-        except Exception as e :
-            messages.error(request, f'Error creating slot :{str(e)}')
+        except ValidationError as e:
+           
+            messages.error(request, str(e.message_dict.get('__all__', [e.message])[0]))
+        except Exception as e:
+            messages.error(request, f'Error creating slot: {str(e)}')
     
     sessions = BookingSession.objects.filter(
         owner_session=request.user).order_by('-created_at')
@@ -75,10 +81,25 @@ def dashboard(request):
     booking_count = TimeSlot.objects.filter(
         owner=owner, is_booked=True).count()
     
+    # Последние бронирования
+    recent_bookings = TimeSlot.objects.filter(
+        owner=owner,
+        is_booked=True
+    ).order_by('-booked_at')[:5]
+    
+    # Активные сессии (с хотя бы одним слотом)
+    active_sessions = BookingSession.objects.filter(
+        owner_session=owner
+    ).annotate(
+        slots_count=Count('session_slots')
+    ).filter(slots_count__gt=0).order_by('-created_at')[:5]
+    
     context = {
-        'session_count':session_count,
-        'booking_count':booking_count,
-        'slots_count':slots_count,
+        'session_count': session_count,
+        'booking_count': booking_count,
+        'slots_count': slots_count,
+        'recent_bookings': recent_bookings,
+        'active_sessions': active_sessions,
     }
     return render(request, 'bookings/dashboard.html', context)
 
@@ -132,7 +153,6 @@ def book_slot(request, public_link, slot_id):
             messages.success(request, 'Slot booked successfully!')
             return redirect('bookings:public_view', public_link=public_link)
         
-        # GET - показать форму бронирования
         context = {
             'slot': slot,
             'public_link': public_link,
@@ -163,6 +183,141 @@ def register(request):
     
     context = {'form': form}
     return render(request, 'registration/register.html', context)
+
+
+
+@login_required
+def sessions_list(request):
+    """
+    List of all session
+    """
+    sessions = BookingSession.objects.filter(
+        owner_session=request.user
+    ).order_by('-created_at')
+    
+    context = {
+        'sessions': sessions,
+    }
+    return render(request, 'bookings/sessions_list.html', context)
+
+
+@login_required
+def create_session(request):
+    """
+    Создание новой сессии
+    """
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        description = request.POST.get('description', '').strip()
+        
+        if not title:
+            messages.error(request, 'Title is required')
+            return redirect('bookings:create_session')
+        
+        session = BookingSession(
+            owner_session=request.user,
+            title=title,
+            description=description if description else None,
+        )
+        session.save()
+        
+        messages.success(request, f'Session "{title}" created successfully!')
+        return redirect('bookings:sessions_list')
+    
+    return render(request, 'bookings/create_session.html')
+
+
+@login_required
+def edit_session(request, session_id):
+    """
+    Редактирование сессии
+    """
+    session = get_object_or_404(BookingSession, id=session_id, owner_session=request.user)
+    
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        description = request.POST.get('description', '').strip()
+        
+        if not title:
+            messages.error(request, 'Title is required')
+            return redirect('bookings:edit_session', session_id=session_id)
+        
+        session.title = title
+        session.description = description if description else None
+        session.save()
+        
+        messages.success(request, 'Session updated successfully!')
+        return redirect('bookings:sessions_list')
+    
+    context = {
+        'session': session,
+    }
+    return render(request, 'bookings/edit_session.html', context)
+
+
+@login_required
+def delete_session(request, session_id):
+    """
+    Удаление сессии
+    """
+    session = get_object_or_404(BookingSession, id=session_id, owner_session=request.user)
+    
+    if request.method == 'POST':
+        session_title = session.title
+        session.delete()
+        messages.success(request, f'Session "{session_title}" deleted successfully!')
+        return redirect('bookings:sessions_list')
+    
+    context = {
+        'session': session,
+    }
+    return render(request, 'bookings/delete_session.html', context)
+
+
+# ==================== УПРАВЛЕНИЕ СЛОТАМИ ====================
+
+@login_required
+def delete_slot(request, slot_id):
+    """
+    Удаление слота
+    """
+    slot = get_object_or_404(TimeSlot, id=slot_id, owner=request.user)
+    
+    if request.method == 'POST':
+        slot.delete()
+        messages.success(request, 'Slot deleted successfully!')
+        return redirect('bookings:my_slots')
+    
+    context = {
+        'slot': slot,
+    }
+    return render(request, 'bookings/delete_slot.html', context)
+
+
+@login_required
+def cancel_booking(request, slot_id):
+    """
+    Отмена бронирования (только владелец слота может отменить)
+    """
+    slot = get_object_or_404(TimeSlot, id=slot_id, owner=request.user)
+    
+    if request.method == 'POST':
+        if not slot.is_booked:
+            messages.warning(request, 'This slot is not booked')
+            return redirect('bookings:my_slots')
+        
+        slot.booked_by = None
+        slot.guest_name = None
+        slot.booked_at = None
+        slot.save()  # Автоматически обновит is_booked через save()
+        
+        messages.success(request, 'Booking cancelled successfully!')
+        return redirect('bookings:my_slots')
+    
+    context = {
+        'slot': slot,
+    }
+    return render(request, 'bookings/cancel_booking.html', context)
 
 
 

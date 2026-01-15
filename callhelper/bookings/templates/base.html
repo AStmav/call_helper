@@ -47,9 +47,10 @@
                 </div>
                 <div class="flex items-center space-x-4">
                     {% if user.is_authenticated %}
-                        <span class="text-sm text-gray-700">Welcome, <strong>{{ user.username }}</strong></span>
+                        <span class="text-sm text-gray-700 hidden sm:inline">Welcome, <strong>{{ user.username }}</strong></span>
                         <a href="{% url 'bookings:dashboard' %}" class="text-sm text-gray-700 hover:text-primary-600 transition">Dashboard</a>
-                        <a href="{% url 'bookings:my_slots' %}" class="text-sm text-gray-700 hover:text-primary-600 transition">My Slots</a>
+                        <a href="{% url 'bookings:my_slots' %}" class="text-sm text-gray-700 hover:text-primary-600 transition">Slots</a>
+                        <a href="{% url 'bookings:sessions_list' %}" class="text-sm text-gray-700 hover:text-primary-600 transition">Sessions</a>
                         <a href="{% url 'bookings:create_slot' %}" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition text-sm font-medium">Create Slot</a>
                         <a href="{% url 'logout' %}" class="text-sm text-gray-700 hover:text-red-600 transition">Logout</a>
                     {% else %}

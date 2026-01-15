@@ -99,15 +99,19 @@
                 <div class="space-y-3">
                     {% for session in sessions %}
                         <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                            <div class="flex-1">
+                            <div class="flex-1 min-w-0">
                                 <p class="text-sm font-medium text-gray-900">{{ session.title }}</p>
-                                <p class="text-xs text-gray-500 mt-1">
-                                    Link: <code class="bg-white px-2 py-1 rounded">{{ request.scheme }}://{{ request.get_host }}{% url 'bookings:public_booking' session.public_link %}</code>
+                                <p class="text-xs text-gray-500 mt-1 truncate">
+                                    <code class="bg-white px-2 py-1 rounded">{{ request.scheme }}://{{ request.get_host }}{% url 'bookings:public_booking' session.public_link %}</code>
                                 </p>
                             </div>
-                            <button onclick="copyToClipboard('{{ request.scheme }}://{{ request.get_host }}{% url 'bookings:public_booking' session.public_link %}')" 
-                                    class="ml-4 px-3 py-1 text-xs font-medium text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100 transition">
-                                Copy Link
+                            <button onclick="copyToClipboard('{{ request.scheme }}://{{ request.get_host }}{% url 'bookings:public_booking' session.public_link %}', this)" 
+                                    class="ml-4 px-3 py-1 text-xs font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition flex-shrink-0"
+                                    title="Copy link">
+                                <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                </svg>
+                                Copy
                             </button>
                         </div>
                     {% endfor %}
@@ -118,10 +122,47 @@
 </div>
 
 <script>
-    function copyToClipboard(text) {
+    function copyToClipboard(text, button) {
         navigator.clipboard.writeText(text).then(function() {
-            alert('Link copied to clipboard!');
+            // Визуальная обратная связь
+            if (button) {
+                const originalHTML = button.innerHTML;
+                button.innerHTML = '<svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>Copied!';
+                button.classList.add('bg-green-600', 'hover:bg-green-700');
+                
+                setTimeout(function() {
+                    button.innerHTML = originalHTML;
+                    button.classList.remove('bg-green-600', 'hover:bg-green-700');
+                    button.classList.add('bg-primary-600', 'hover:bg-primary-700');
+                }, 2000);
+            }
+            
+            // Показываем toast уведомление
+            showToast('Link copied to clipboard!', 'success');
+        }).catch(function(err) {
+            console.error('Failed to copy: ', err);
+            showToast('Failed to copy link', 'error');
         });
+    }
+
+    function showToast(message, type) {
+        const toast = document.createElement('div');
+        toast.className = `fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg transition-all transform translate-x-full ${
+            type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+        }`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.classList.remove('translate-x-full');
+        }, 100);
+        
+        setTimeout(() => {
+            toast.classList.add('translate-x-full');
+            setTimeout(() => {
+                document.body.removeChild(toast);
+            }, 300);
+        }, 3000);
     }
 </script>
 {% endblock %}
