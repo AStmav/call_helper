@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% load tz %}
+
+{% block title %}{{ session.title }} - Calls Helper{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Session Header -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sm:p-8 mb-6">
+        <div class="flex items-start justify-between">
+            <div class="flex-1">
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ session.title }}</h1>
+                {% if session.description %}
+                    <p class="text-gray-600 mb-4">{{ session.description }}</p>
+                {% endif %}
+                <div class="flex items-center space-x-4 text-sm text-gray-500">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        </svg>
+                        Hosted by {{ session.owner_session.username }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Available Slots -->
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sm:p-8">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-semibold text-gray-900">Available Time Slots</h2>
+            <span class="text-sm text-gray-500">{{ slots|length }} slot{{ slots|length|pluralize }} available</span>
+        </div>
+
+        {% if slots %}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% for slot in slots %}
+                    <div class="border border-gray-200 rounded-lg p-4 hover:border-primary-300 hover:shadow-md transition group">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center mb-2">
+                                    <svg class="w-5 h-5 text-primary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <span class="text-sm font-medium text-gray-900">
+                                        {{ slot.start_time|date:"M d, Y" }}
+                                    </span>
+                                </div>
+                                <p class="text-lg font-semibold text-gray-900 mb-1">
+                                    {{ slot.start_time|time:"H:i" }} - {{ slot.end_time|time:"H:i" }}
+                                </p>
+                                <p class="text-sm text-gray-500">
+                                    Duration: {{ slot.get_duration_display }}
+                                </p>
+                            </div>
+                            <div>
+                                <a href="{% url 'bookings:book_slot' public_link=public_link slot_id=slot.id %}" 
+                                   class="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition text-sm font-medium group-hover:shadow-md">
+                                    Book Now
+                                    <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-12">
+                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <h3 class="mt-2 text-sm font-medium text-gray-900">No available slots</h3>
+                <p class="mt-1 text-sm text-gray-500">All time slots have been booked or there are no slots available yet.</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Info Box -->
+    <div class="mt-6 bg-primary-50 border border-primary-200 rounded-lg p-4">
+        <div class="flex">
+            <svg class="w-5 h-5 text-primary-400 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+            </svg>
+            <div>
+                <h3 class="text-sm font-medium text-primary-800">How it works</h3>
+                <p class="mt-1 text-sm text-primary-700">
+                    Select an available time slot and book it. You'll receive a confirmation once your booking is complete.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

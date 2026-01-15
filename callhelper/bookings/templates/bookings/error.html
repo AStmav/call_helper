@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block title %}Error - Calls Helper{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+            <svg class="h-6 w-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </div>
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">Error</h1>
+        <p class="text-gray-600 mb-6">{{ error|default:"An error occurred" }}</p>
+        <a href="{% url 'bookings:dashboard' %}" class="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition">
+            Go to Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}
+

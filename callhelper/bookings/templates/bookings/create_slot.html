@@ -1,0 +1,128 @@
+{% extends 'base.html' %}
+{% load tz %}
+
+{% block title %}Create Slot - Calls Helper{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sm:p-8">
+        <!-- Page Header -->
+        <div class="mb-6">
+            <h1 class="text-3xl font-bold text-gray-900">Create Time Slot</h1>
+            <p class="mt-2 text-sm text-gray-600">Add a new available time slot for booking</p>
+        </div>
+
+        <!-- Form -->
+        <form method="post" action="{% url 'bookings:create_slot' %}" class="space-y-6">
+            {% csrf_token %}
+
+            <!-- Session Selection -->
+            <div>
+                <label for="session_id" class="block text-sm font-medium text-gray-700 mb-2">
+                    Booking Session
+                </label>
+                <select name="session_id" id="session_id" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition">
+                    <option value="">Use most recent session (or create new)</option>
+                    {% for session in sessions %}
+                        <option value="{{ session.id }}" {% if active_session.id == session.id %}selected{% endif %}>
+                            {{ session.title }} - {{ session.public_link }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <p class="mt-2 text-sm text-gray-500">
+                    Select a session or leave empty to use/create the most recent one
+                </p>
+            </div>
+
+            <!-- Start Time -->
+            <div>
+                <label for="start_time" class="block text-sm font-medium text-gray-700 mb-2">
+                    Start Time <span class="text-red-500">*</span>
+                </label>
+                <input type="datetime-local" 
+                       name="start_time" 
+                       id="start_time" 
+                       required
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition"
+                       value="{{ request.POST.start_time }}">
+            </div>
+
+            <!-- End Time -->
+            <div>
+                <label for="end_time" class="block text-sm font-medium text-gray-700 mb-2">
+                    End Time <span class="text-red-500">*</span>
+                </label>
+                <input type="datetime-local" 
+                       name="end_time" 
+                       id="end_time" 
+                       required
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition"
+                       value="{{ request.POST.end_time }}">
+            </div>
+
+            <!-- Error Messages -->
+            {% if form.errors %}
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <div class="flex">
+                        <svg class="w-5 h-5 text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                        </svg>
+                        <div>
+                            <h3 class="text-sm font-medium text-red-800">Please correct the errors below</h3>
+                            <ul class="mt-2 text-sm text-red-700 list-disc list-inside">
+                                {% for field, errors in form.errors.items %}
+                                    {% for error in errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Actions -->
+            <div class="flex items-center justify-end space-x-4 pt-4 border-t border-gray-200">
+                <a href="{% url 'bookings:my_slots' %}" class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                    Cancel
+                </a>
+                <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition">
+                    Create Slot
+                </button>
+            </div>
+        </form>
+
+        <!-- Existing Sessions Info -->
+        {% if sessions %}
+            <div class="mt-8 pt-8 border-t border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">Your Sessions</h3>
+                <div class="space-y-3">
+                    {% for session in sessions %}
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-gray-900">{{ session.title }}</p>
+                                <p class="text-xs text-gray-500 mt-1">
+                                    Link: <code class="bg-white px-2 py-1 rounded">{{ request.scheme }}://{{ request.get_host }}{% url 'bookings:public_booking' session.public_link %}</code>
+                                </p>
+                            </div>
+                            <button onclick="copyToClipboard('{{ request.scheme }}://{{ request.get_host }}{% url 'bookings:public_booking' session.public_link %}')" 
+                                    class="ml-4 px-3 py-1 text-xs font-medium text-primary-600 bg-primary-50 rounded-lg hover:bg-primary-100 transition">
+                                Copy Link
+                            </button>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(function() {
+            alert('Link copied to clipboard!');
+        });
+    }
+</script>
+{% endblock %}
+

@@ -1,8 +1,10 @@
 from django.utils import timezone
-from django.shortcuts import render,redirect
+from django.shortcuts import render, redirect
 from django.contrib import messages
+from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from .models import TimeSlot, BookingSession
+from .forms import UserRegistrationForm
 
 @login_required
 def my_slots(request):
@@ -95,6 +97,8 @@ def public_view(request, public_link):
             'slots': free_slots,
         }
         
+
+
         return render(request, 'bookings/public_view.html', context)
         
     except BookingSession.DoesNotExist:
@@ -104,3 +108,61 @@ def public_view(request, public_link):
 def book_slot(request, public_link, slot_id):
     try:
         slot = TimeSlot.objects.get(id=slot_id, session__public_link=public_link)
+        
+        if request.method == 'POST':
+            if slot.is_booked:
+                messages.error(request, 'Slot already booked')
+                return redirect('bookings:public_view', public_link=public_link)
+            
+            if request.user.is_authenticated:
+                slot.booked_by = request.user
+            else:
+                # Для гостей - сохранить имя
+                guest_name = request.POST.get('guest_name', '').strip()
+                if not guest_name:
+                    messages.error(request, 'Please provide your name')
+                    context = {
+                        'slot': slot,
+                        'public_link': public_link,
+                    }
+                    return render(request, 'bookings/book_slot.html', context)
+                slot.guest_name = guest_name
+            
+            slot.save()
+            messages.success(request, 'Slot booked successfully!')
+            return redirect('bookings:public_view', public_link=public_link)
+        
+        # GET - показать форму бронирования
+        context = {
+            'slot': slot,
+            'public_link': public_link,
+        }
+        return render(request, 'bookings/book_slot.html', context)
+        
+    except TimeSlot.DoesNotExist:
+        messages.error(request, 'Slot not found')
+        return redirect('bookings:public_view', public_link=public_link)
+
+
+def register(request):
+    """
+    User registration view
+    """
+    if request.user.is_authenticated:
+        return redirect('bookings:dashboard')
+    
+    if request.method == 'POST':
+        form = UserRegistrationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            messages.success(request, f'Welcome, {user.username}! Your account has been created successfully.')
+            return redirect('bookings:dashboard')
+    else:
+        form = UserRegistrationForm()
+    
+    context = {'form': form}
+    return render(request, 'registration/register.html', context)
+
+
+
