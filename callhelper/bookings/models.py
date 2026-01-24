@@ -1,19 +1,10 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from .abstract_models import BaseModel
 from django.utils import timezone
 import uuid 
 
-class BaseModel(models.Model):
-    """
-    An abstract base class model that provides self-updating
-    'created_at' and 'updated_at' fields.
-    """
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        abstract = True
 
 class BookingSession(BaseModel):
     """
@@ -149,6 +140,19 @@ class TimeSlot(BaseModel):
         self.full_clean()
         super().save(*args, **kwargs)
 
-
+class UserProfile(BaseModel):
+    """
+    Profile of user in telegram
+    """
+    user =  models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='profile'
+    )
+    telegram_id = models.BigIntegerField(
+        unique=True,
+        blank=True,
+        null=True
+    )
 
 
